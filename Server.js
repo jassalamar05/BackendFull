@@ -82,14 +82,58 @@ const routes=require("./Routes/apiRoutes")
 app.use("/api",routes)
 
 
-//Global error handler
-app.use((err,req,res,next)=>{
-    console.log(err)
+// Global Error Handler
 
-    res.status(err.status || 500).json({
-        message:err.message || "Internal server error"
-    })
-})
+app.use((err, req, res, next) => {
+
+    console.error(err);
+
+    // 1. Duplicate data
+    if (err.code === 11000) {
+        return res.status(409).json({
+            success: false,
+            message: "Data already exists"
+        });
+    }
+
+    // 2. Validation error 
+    if (err.name === "ValidationError") {
+        return res.status(400).json({
+            success: false,
+            message: "Validation failed"
+        });
+    }
+
+    // 3. Invalid MongoDB ID 
+    if (err.name === "CastError") {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid ID"
+        });
+    }
+
+    // 4. Invalid JWT
+    if (err.name === "JsonWebTokenError") {
+        return res.status(401).json({
+            success: false,
+            message: "Invalid token"
+        });
+    }
+
+    // 5. Expired JWT
+    if (err.name === "TokenExpiredError") {
+        return res.status(401).json({
+            success: false,
+            message: "Token expired"
+        });
+    }
+
+    // 6. Generic / custom errors
+    res.status(err.statusCode || err.status || 500).json({
+        success: false,
+        message: err.message || "Internal server error"
+    });
+});
 
 
 
@@ -97,25 +141,25 @@ app.use((err,req,res,next)=>{
 const PORT=process.env.PORT || 5000;
 
 
-app.listen(PORT,()=>{
-    console.log(`port is running on ${PORT}`)
-})
 
+const server = app.listen(PORT, () => {
+    console.log(`Server running on ${PORT}`);
+});
 
-//Graceful situtaton
-process.on("SIGTERM", async()=>{
-    console.log("shutdown signal")
+// Graceful Shutdown
+process.on("SIGINT", async () => {
+    console.log("SIGINT received");
 
-    // stop accedtopne new req
-    Server.close("all req completed")
+    // Stop accepting new requests
+    server.close(async () => {
+        console.log("Server closed");
 
-    //close db
-    await mongoose.connection.close()
-    console.log("db cooenceed")
+        // Close MongoDB
+        await mongoose.connection.close();
+        console.log("Database closed");
 
-    //finally stop NODE .js
-    process.exit(0)
-})
-
-
+        // Stop Node.js
+        process.exit(0);
+    });
+});
 
