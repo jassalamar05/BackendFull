@@ -1,15 +1,20 @@
-const express=require("express")
+const express = require("express");
+const router = express.Router();
+const {
+  createProduct,
+  getProduct,
+  getSingleProd,
+  updatePro,
+  deletepRD,
+} = require("../Controller/ProdController");
+const validatorProduct = require("../Validators/Prod.validators");
 
-const router=express.Router()
-
-const { createUser, getAll, getId, updateUser, deleteUser } = require("../Controller/UserController")
-
-router.post("/createUser",createUser)
-router.get("/getall",getAll)
-router.get("/getone/:id",getId)
-router.put("/update/:id",updateUser)
-router.delete("/delete/:id",deleteUser)
-module.exports=router
+router.post("/add", createProduct, validatorProduct);
+router.get("/get", getProduct);
+router.get("/getid/:id", getSingleProd);
+router.put("/update/:id", updatePro, validatorProduct);
+router.delete("/delete/:id", deletepRD);
+module.exports = router;
 
 // function apiRoutes(req, res) {
 
